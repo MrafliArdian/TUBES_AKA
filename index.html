@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Investasi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #343a40;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #495057;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            text-align: center;
+            color: #495057;
+        }
+
+        #efficiencyTable {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #efficiencyTable th, #efficiencyTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #efficiencyTable th {
+            background-color: #f2f2f2;
+        }
+
+        #chart {
+            margin-top: 20px;
+            display: none;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .spacer {
+            margin: 20px 0; /* Jarak antar informasi */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kalkulator Investasi</h1>
+        <form id="investment-form">
+            <label for="targetAmount">Jumlah Uang yang Ingin Dicapai (Dollar):</label>
+            <input type="number" id="targetAmount" required>
+
+            <label for="investmentDuration">Lama Target Investasi (Bulan):</label>
+            <input type="number" id="investmentDuration" required>
+
+            <label for="monthlySavings">Uang yang Bisa Ditabung per Bulan (Dollar):</label>
+            <input type="number" id="monthlySavings" required>
+
+            <label for="fileInput">Atau Unggah File CSV:</label>
+            <input type="file" id="fileInput" accept=".csv">
+
+            <button type="submit">Hitung</button>
+            <button type="button" id="efficiency-button" style="display: none;">Efektivitas</button>
+        </form>
+
+        <div id="result"></div>
+        <table id="efficiencyTable">
+            <thead>
+                <tr>
+                    <th>Metode</th>
+                    <th>Waktu Eksekusi (ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Iteratif</td>
+                    <td id="iterativeTime"></td>
+                </tr>
+                <tr>
+                    <td>Rekursif</td>
+                    <td id="recursiveTime"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="chart">
+            <canvas id="efficiencyChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Fungsi Iteratif
+        function calculateInvestmentIterative(targetAmount, investmentDuration, monthlySavings) {
+            const annualReturnRate = 0.10; // 10% per tahun
+            let totalInvestment = 0;
+
+            for (let month = 1; month <= investmentDuration; month++) {
+                totalInvestment += monthlySavings;
+                totalInvestment *= (1 + annualReturnRate / 12); // Menghitung return per bulan
+
+                // Tambahkan logika tambahan untuk memperlambat proses
+                for (let i = 0; i < 1000; i++) {
+                    // Simulasi pekerjaan tambahan
+                    totalInvestment += 0; // Tidak melakukan apa-apa, hanya untuk memperlambat
+                }
+            }
+
+            return totalInvestment;
+        }
+
+        // Fungsi Rekursif dengan Kompleksitas Tambahan
+        function calculateInvestmentRecursive(targetAmount, investmentDuration, monthlySavings, totalInvestment = 0, month = 1) {
+            if (month > investmentDuration) {
+                return totalInvestment;
+            }
+            // Menambahkan logika tambahan untuk memperlambat proses
+            for (let i = 0; i < 1000; i++) {
+                // Simulasi pekerjaan tambahan
+                totalInvestment += 0; // Tidak melakukan apa-apa, hanya untuk memperlambat
+            }
+            totalInvestment += monthlySavings;
+            totalInvestment *= (1 + 0.10 / 12); // Menghitung return per bulan
+            return calculateInvestmentRecursive(targetAmount, investmentDuration, monthlySavings, totalInvestment, month + 1);
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const contents = event.target.result;
+                const lines = contents.split('\n');
+
+                // Clear previous results
+                document.getElementById('result').innerHTML = '';
+                const iterativeTimes = [];
+                const recursiveTimes = [];
+
+                lines.forEach(line => {
+                    const [targetAmount, investmentDuration, monthlySavings] = line.split(',').map(Number);
+                    if (!isNaN(targetAmount) && !isNaN(investmentDuration) && !isNaN(monthlySavings)) {
+                        // Menghitung hasil investasi menggunakan metode iteratif
+                        const startIterative = performance.now();
+                        const resultIterative = calculateInvestmentIterative(targetAmount, investmentDuration, monthlySavings);
+                        const endIterative = performance.now();
+                        const iterativeTime = endIterative - startIterative;
+
+                        // Menghitung hasil investasi menggunakan metode rekursif
+                        const startRecursive = performance.now();
+                        const resultRecursive = calculateInvestmentRecursive(targetAmount, investmentDuration, monthlySavings);
+                        const endRecursive = performance.now();
+                        const recursiveTime = endRecursive - startRecursive;
+
+                        // Update result immediately for each line
+                        const resultDiv = document.getElementById('result');
+                        resultDiv.innerHTML += `<p>Hasil Investasi Anda: $${resultIterative.toFixed(2)} (Iteratif), $${resultRecursive.toFixed(2)} (Rekursif)</p>`;
+                        resultDiv.innerHTML += `<p>Waktu Eksekusi: ${iterativeTime.toFixed(2)} ms (Iteratif), ${recursiveTime.toFixed(2)} ms (Rekursif)</p>`;
+                        resultDiv.innerHTML += `<div class="spacer"></div>`; // Jarak antar informasi
+
+                        if (resultIterative >= targetAmount) {
+                            resultDiv.innerHTML += `<p>Target investasi Anda sudah cocok untuk menggapai mimpi!</p>`;
+                        } else {
+                            resultDiv.innerHTML += `<p>Target investasi Anda belum cukup untuk menggapai mimpi.</p>`;
+                        }
+
+                        // Menyimpan waktu eksekusi untuk grafik
+                        iterativeTimes.push(iterativeTime);
+                        recursiveTimes.push(recursiveTime);
+                    }
+                });
+
+                // Menampilkan grafik setelah semua informasi ditampilkan
+                document.getElementById('chart').style.display = 'block';
+                const ctx = document.getElementById('efficiencyChart').getContext('2d');
+                const efficiencyChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: lines.map((_, index) => `Investasi ${index + 1}`),
+                        datasets: [
+                            {
+                                label: 'Waktu Eksekusi Iteratif (ms)',
+                                data: iterativeTimes,
+                                backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Waktu Eksekusi Rekursif (ms)',
+                                data: recursiveTimes,
+                                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            };
+            reader.readAsText(file);
+        }
+
+        document.getElementById('investment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const targetAmount = parseFloat(document.getElementById('targetAmount').value);
+            const investmentDuration = parseInt(document.getElementById('investmentDuration').value); // Menggunakan bulan
+            const monthlySavings = parseFloat(document.getElementById('monthlySavings').value); // Uang per bulan
+
+            // Menghitung hasil investasi menggunakan metode iteratif
+            const startIterative = performance.now();
+            const resultIterative = calculateInvestmentIterative(targetAmount, investmentDuration, monthlySavings);
+            const endIterative = performance.now();
+            const iterativeTime = endIterative - startIterative;
+
+            // Menghitung hasil investasi menggunakan metode rekursif
+            const startRecursive = performance.now();
+            const resultRecursive = calculateInvestmentRecursive(targetAmount, investmentDuration, monthlySavings);
+            const endRecursive = performance.now();
+            const recursiveTime = endRecursive - startRecursive;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<p>Hasil Investasi Anda: $${resultIterative.toFixed(2)} (Iteratif), $${resultRecursive.toFixed(2)} (Rekursif)</p>`;
+            resultDiv.innerHTML += `<p>Waktu Eksekusi: ${iterativeTime.toFixed(2)} ms (Iteratif), ${recursiveTime.toFixed(2)} ms (Rekursif)</p>`;
+            resultDiv.innerHTML += `<div class="spacer"></div>`; // Jarak antar informasi
+
+            if (resultIterative >= targetAmount) {
+                resultDiv.innerHTML += `<p>Target investasi Anda sudah cocok untuk menggapai mimpi!</p>`;
+            } else {
+                resultDiv.innerHTML += `<p>Target investasi Anda belum cukup untuk menggapai mimpi.</p>`;
+            }
+
+            // Menampilkan waktu eksekusi
+            document.getElementById('iterativeTime').innerText = iterativeTime.toFixed(2);
+            document.getElementById('recursiveTime').innerText = recursiveTime.toFixed(2);
+
+            // Menampilkan tombol efektivitas
+            document.getElementById('efficiency-button').style.display = 'block';
+        });
+
+        document.getElementById('efficiency-button').addEventListener('click', function() {
+            document.getElementById('efficiencyTable').style.display = 'table';
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        });
+    </script>
+</body>
+</html>
